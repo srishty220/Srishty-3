@@ -21,10 +21,40 @@ export interface Filter {
 
 // If multiple filters are provided, any book that matches at least one of them should be returned
 // Within a single filter, a book would need to match all the given conditions
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function listBooks(filters?: Filter[]): Promise<Book[]> {
-  throw new Error("Todo");
+  const query =
+    filters
+      ?.map((filter, index) => {
+        const parts: string[] = [];
+
+        if (filter.from !== undefined) {
+          parts.push(`filters[${index}][from]=${filter.from}`);
+        }
+        if (filter.to !== undefined) {
+          parts.push(`filters[${index}][to]=${filter.to}`);
+        }
+        if (filter.name !== undefined) {
+          parts.push(`filters[${index}][name]=${encodeURIComponent(filter.name)}`);
+        }
+        if (filter.author !== undefined) {
+          parts.push(`filters[${index}][author]=${encodeURIComponent(filter.author)}`);
+        }
+
+        return parts.join("&");
+      })
+      .join("&") ?? "";
+
+  const url = `http://localhost:3000/books?${query}`;
+
+  const result = await fetch(url);
+
+  if (result.ok) {
+    return (await result.json()) as Book[];
+  } else {
+    throw new Error("Failed to fetch books");
+  }
 }
+
 
 async function createOrUpdateBook(book: Book): Promise<BookID> {
   return await previous_assignment.createOrUpdateBook(book);
